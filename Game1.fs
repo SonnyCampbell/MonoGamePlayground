@@ -3,6 +3,8 @@ namespace MonogameTest
 open System
 open System
 open System
+open System
+open System
 open System.Numerics
 open System.Timers
 open Microsoft.Xna.Framework
@@ -13,6 +15,8 @@ open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Graphics
 open Microsoft.Xna.Framework.Input
+open MonoGame.Extended.Tiled
+open MonoGame.Extended.Tiled.Graphics
 
 type Sprite =
     {position: Vector2; speed: float32; texture: Texture2D; size: Point; offset: Point;}
@@ -138,81 +142,81 @@ type Camera(viewport: Viewport) =
         this.ScreenToWorld <- Matrix.Invert(this.WorldToScreen)
         
         
-type TileSet =
-    {
-        tilesWide: int
-        tilesHigh: int
-        tileWidth: int
-        tileHeight: int
-        texture: Texture2D
-        sourceRectangles: Rectangle array
-    }
-    
-module TileSet =
-    let CreateTileSet(tilesWide, tilesHigh, tileWidth, tileHeight, texture) =
-        let sourceRectangles =
-            [|
-                for y in 0..tilesHigh-1 do
-                    for x in 0..tilesWide-1 do
-                        yield Rectangle(x*tileWidth, x*tileHeight, tileWidth, tileHeight)
-            |]
-        
-        {
-            tilesWide = tilesWide
-            tilesHigh = tilesHigh
-            tileWidth = tileWidth
-            tileHeight = tileHeight
-            texture = texture
-            sourceRectangles = sourceRectangles
-        }
-        
-type TileLayer = {
-    tiles: int array
-    width: int
-    height: int
-    visible: bool
-}
-
-module TileLayer =
-    let getTileId x y (layer: TileLayer) =
-        match x, y with
-        | (x,y) when x < 0 || y < 0 -> None
-        | (x,y) when x > layer.width || y > layer.height -> None
-        | _ ->
-            let index = y * layer.width + x
-            match layer.tiles |> Array.tryItem index with
-            | Some tileId when tileId > 0 -> Some(tileId-1) //id is 1-based, 0 being empty cell
-            | _ -> None
-            
-    let vectorToCell (position: Vector2) (tileset: TileSet) =
-        Point(int position.X / tileset.tileWidth, int position.Y / tileset.tileHeight)
-        
-    let draw (spriteBatch: SpriteBatch, tileset: TileSet, camera: Camera, layer: TileLayer, game: Game) =
-        if not layer.visible then ()
-        else
-            let cameraPoint =
-                let location =
-                    Vector2(camera.Position.X - (float32 game.GraphicsDevice.Viewport.Width * 0.5f),
-                            camera.Position.Y - (float32 game.GraphicsDevice.Viewport.Height * 0.5f))
-                vectorToCell location tileset
-            
-            let viewPoint =
-                let location =
-                    Vector2(camera.Position.X + (float32 game.GraphicsDevice.Viewport.Width * 0.5f),
-                            camera.Position.Y + (float32 game.GraphicsDevice.Viewport.Height * 0.5f))
-                vectorToCell location tileset
-                
-            let minX, minY = max 0 (cameraPoint.X - 1), max 0 (cameraPoint.Y - 1)
-            let maxX, maxY = min (viewPoint.X + 1) layer.width - 1, min (viewPoint.Y + 1) layer.height - 1
-            
-            for y in minY..maxY do
-                for x in minX..maxX do
-                    match getTileId x y layer with
-                    | None -> ()
-                    | Some tile ->
-                        if tile = -1 then () else
-                        let destination = Rectangle(x * tileset.tileWidth, y * tileset.tileHeight, tileset.tileWidth, tileset.tileHeight)
-                        spriteBatch.Draw(tileset.texture, destination, Nullable.op_Implicit tileset.sourceRectangles.[tile], Color.White)
+//type TileSet =
+//    {
+//        tilesWide: int
+//        tilesHigh: int
+//        tileWidth: int
+//        tileHeight: int
+//        texture: Texture2D
+//        sourceRectangles: Rectangle array
+//    }
+//    
+//module TileSet =
+//    let CreateTileSet(tilesWide, tilesHigh, tileWidth, tileHeight, texture) =
+//        let sourceRectangles =
+//            [|
+//                for y in 0..tilesHigh-1 do
+//                    for x in 0..tilesWide-1 do
+//                        yield Rectangle(x*tileWidth, x*tileHeight, tileWidth, tileHeight)
+//            |]
+//        
+//        {
+//            tilesWide = tilesWide
+//            tilesHigh = tilesHigh
+//            tileWidth = tileWidth
+//            tileHeight = tileHeight
+//            texture = texture
+//            sourceRectangles = sourceRectangles
+//        }
+//        
+//type TileLayer = {
+//    tiles: int array
+//    width: int
+//    height: int
+//    visible: bool
+//}
+//
+//module TileLayer =
+//    let getTileId x y (layer: TileLayer) =
+//        match x, y with
+//        | (x,y) when x < 0 || y < 0 -> None
+//        | (x,y) when x > layer.width || y > layer.height -> None
+//        | _ ->
+//            let index = y * layer.width + x
+//            match layer.tiles |> Array.tryItem index with
+//            | Some tileId when tileId > 0 -> Some(tileId-1) //id is 1-based, 0 being empty cell
+//            | _ -> None
+//            
+//    let vectorToCell (position: Vector2) (tileset: TileSet) =
+//        Point(int position.X / tileset.tileWidth, int position.Y / tileset.tileHeight)
+//        
+//    let draw (spriteBatch: SpriteBatch, tileset: TileSet, camera: Camera, layer: TileLayer, game: Game) =
+//        if not layer.visible then ()
+//        else
+//            let cameraPoint =
+//                let location =
+//                    Vector2(camera.Position.X - (float32 game.GraphicsDevice.Viewport.Width * 0.5f),
+//                            camera.Position.Y - (float32 game.GraphicsDevice.Viewport.Height * 0.5f))
+//                vectorToCell location tileset
+//            
+//            let viewPoint =
+//                let location =
+//                    Vector2(camera.Position.X + (float32 game.GraphicsDevice.Viewport.Width * 0.5f),
+//                            camera.Position.Y + (float32 game.GraphicsDevice.Viewport.Height * 0.5f))
+//                vectorToCell location tileset
+//                
+//            let minX, minY = max 0 (cameraPoint.X - 1), max 0 (cameraPoint.Y - 1)
+//            let maxX, maxY = min (viewPoint.X + 1) layer.width - 1, min (viewPoint.Y + 1) layer.height - 1
+//            
+//            for y in minY..maxY do
+//                for x in minX..maxX do
+//                    match getTileId x y layer with
+//                    | None -> ()
+//                    | Some tile ->
+//                        if tile = -1 then () else
+//                        let destination = Rectangle(x * tileset.tileWidth, y * tileset.tileHeight, tileset.tileWidth, tileset.tileHeight)
+//                        spriteBatch.Draw(tileset.texture, destination, Nullable.op_Implicit tileset.sourceRectangles.[tile], Color.White)
             
         
 
@@ -226,9 +230,12 @@ type Game1 () as this =
     let mutable newPlayer = Unchecked.defaultof<AnimatedSprite>
     let mutable playerAnimations = Unchecked.defaultof<_>
     let mutable camera = Unchecked.defaultof<_>
-    let mutable tileset = Unchecked.defaultof<TileSet>
-    let mutable tilelayer = Unchecked.defaultof<TileLayer>
-    let mutable terrain = Unchecked.defaultof<Texture2D>
+//    let mutable tileset = Unchecked.defaultof<TileSet>
+//    let mutable tilelayer = Unchecked.defaultof<TileLayer>
+//    let mutable terrain = Unchecked.defaultof<Texture2D>
+    
+    let mutable map = Unchecked.defaultof<TiledMap>
+    let mutable mapRenderer = Unchecked.defaultof<TiledMapRenderer>
     
     let (|KeyDown|_|) k (state: KeyboardState) =
         if state.IsKeyDown k then Some() else None
@@ -260,14 +267,18 @@ type Game1 () as this =
             ] |> Map.ofList
             
         playerAnimations <- anims    
-        terrain <- this.Content.Load<Texture2D>("DungeonTileset")
-        tileset <- TileSet.CreateTileSet (16, 16, 16, 16, terrain)
+//        terrain <- this.Content.Load<Texture2D>("0x72_DungeonTilesetII_v1.2")
+//        tileset <- TileSet.CreateTileSet (16, 16, 16, 16, terrain)
         camera <- Camera(this.GraphicsDevice.Viewport)
         base.Initialize()
+        
+        
 
     override this.LoadContent() =
         spriteBatch <- new SpriteBatch(this.GraphicsDevice)
-        playerSpriteSheet <- this.Content.Load<Texture2D>("DungeonTileset")
+        playerSpriteSheet <- this.Content.Load<Texture2D>("0x72_DungeonTilesetII_v1.2")
+        map <- this.Content.Load<TiledMap>("Map1")
+        mapRenderer <- new TiledMapRenderer(this.GraphicsDevice)
         
         newPlayer <- {
             texture = playerSpriteSheet
@@ -275,7 +286,7 @@ type Game1 () as this =
             currentAnimationKey = AnimationKey.IdleDown
             isAnimating = false
             speed = 166.f
-            position = Vector2.Zero
+            position = Vector2 (float32 (map.Width * map.TileWidth) / 2.f, float32 (map.Height * map.TileHeight)/ 2.f)
             facingRight = true
         }
 
@@ -303,14 +314,11 @@ type Game1 () as this =
             let newPos =
                 player.position + movementVector * player.speed * float32 gameTime.ElapsedGameTime.TotalSeconds
             
-            let playerSize = player.Size.ToVector2()
-            
-            let minClamp = Vector2.Zero - playerSize*0.5f
-            let maxClamp = Vector2(float32 this.GraphicsDevice.Viewport.Width,
-                                   float32 this.GraphicsDevice.Viewport.Height) - playerSize*0.5f
+            let minClamp = Vector2.Zero
+            let maxClamp = Vector2(float32 (map.Width * map.TileWidth) - float32 player.Size.X,
+                                   float32 (map.Height * map.TileHeight) - float32 player.Size.Y)
             
             Vector2.Clamp(newPos, minClamp, maxClamp)
-        
         
         let newAnimation =
             if newPlayer.currentAnimationKey = animationKey then
@@ -334,16 +342,20 @@ type Game1 () as this =
                         animations = newPlayer.animations |> Map.add animationKey newAnimation }
         
         camera.Update newPlayer.position
-    
+        
+        mapRenderer.Update(map, gameTime)
+        
         base.Update(gameTime)
  
     override this.Draw (gameTime) =
         this.GraphicsDevice.Clear Color.CornflowerBlue
 
         // TODO: Add your drawing code here
-        spriteBatch.Begin(transformMatrix = Nullable.op_Implicit camera.WorldToScreen)
+        spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix = Nullable.op_Implicit camera.WorldToScreen)
         //player.Draw(spriteBatch)
         AnimatedSprite.draw newPlayer gameTime spriteBatch
+        
+        mapRenderer.Draw(map, Nullable.op_Implicit camera.WorldToScreen)
         spriteBatch.End()
         base.Draw(gameTime)
 

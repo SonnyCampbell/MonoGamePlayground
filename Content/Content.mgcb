@@ -10,6 +10,11 @@
 
 #-------------------------------- References --------------------------------#
 
+/reference:..\..\..\Game Assets\MonoGame.Extended\MonoGame.Extended.Content.Pipeline.dll
+/reference:..\..\..\Game Assets\MonoGame.Extended\MonoGame.Extended.dll
+/reference:..\..\..\Game Assets\MonoGame.Extended\MonoGame.Extended.Graphics.dll
+/reference:..\..\..\Game Assets\MonoGame.Extended\MonoGame.Extended.Tiled.dll
+/reference:..\..\..\Game Assets\MonoGame.Extended\Newtonsoft.Json.dll
 
 #---------------------------------- Content ---------------------------------#
 
@@ -23,5 +28,10 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:0x72_DungeonTilesetII_v1.2.png;DungeonTileset
+/build:0x72_DungeonTilesetII_v1.2.png;0x72_DungeonTilesetII_v1.2
+
+#begin Map1.tmx
+/importer:TiledMapImporter
+/processor:TiledMapProcessor
+/build:Map1.tmx;Map1
 
