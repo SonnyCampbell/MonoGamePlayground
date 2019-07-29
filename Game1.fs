@@ -279,13 +279,9 @@ module Collision =
         not internalCollision, contact
         
     let collisionResponse (moveableObject: RigidBody) (other: RigidBody) (contact: Contact) (dt: float32) =
-        let solved = Speculative.speculativeSolver dt contact
-        
-        let tangent = solved.normal.PerpendicularCounterClockwise()
-        
-        let newVelocity = solved.a.velocity
-        
-        newVelocity, contact
+        let solved = Speculative.speculativeSolver dt contact 
+
+        solved.a.velocity, contact
         
     
     let innerCollide (tileLayer: TiledMapTileLayer) (moveableObject: RigidBody) (tileAabb: AABB) (tileType: int option) (dt: float32) (x: int) (y: int) =
