@@ -26,8 +26,6 @@ type RigidBody =
         inverseMass: float32
         aabb: AABB
         velocity: Vector2
-        onGround: bool
-        onGroundLast: bool
     }
     
     static member create(mass, width, height, center, vel) =
@@ -36,8 +34,6 @@ type RigidBody =
             inverseMass = if mass = 0.f then 0.f else 1.f / mass
             aabb = {center = center; halfExtents = Vector2(width/2.f, height/2.f)}
             velocity = vel
-            onGround = false
-            onGroundLast = false
         }
     
 type Contact =
@@ -283,18 +279,13 @@ module Collision =
         not internalCollision, contact
         
     let collisionResponse (moveableObject: RigidBody) (other: RigidBody) (contact: Contact) (dt: float32) =
-        let friction = 0.4f
         let solved = Speculative.speculativeSolver dt contact
         
         let tangent = solved.normal.PerpendicularCounterClockwise()
         
-        let newVelocity =
-            if tangent.Y = 0.0f then
-                let tv = solved.a.velocity.Dot(tangent) * friction
-                solved.a.velocity - (tangent * tv)
-            else solved.a.velocity
+        let newVelocity = solved.a.velocity
         
-        newVelocity, solved.normal.Y < 0.0f, contact
+        newVelocity, contact
         
     
     let innerCollide (tileLayer: TiledMapTileLayer) (moveableObject: RigidBody) (tileAabb: AABB) (tileType: int option) (dt: float32) (x: int) (y: int) =
@@ -521,25 +512,18 @@ type Game1 () as this =
             else
                 player.facingRight
                 
-        let movementAndGravityVelocity =
-            let velocity = player.rigidBody.velocity + movementVector // + gravity
-            //clamp max speed to ±maxspeed for x, ±maxspeed*2 for y
-            Vector2.Clamp(velocity, Vector2(-maxSpeed, -maxSpeed * 4.f), Vector2(maxSpeed, maxSpeed * 2.f))
-                
         let rbUpdated = {player.rigidBody with
-                            onGround = false
-                            onGroundLast = player.rigidBody.onGround
-                            velocity = movementAndGravityVelocity}
-        
-        let afterCollisionVelocity, onGround, onGroundLast =
+                            velocity = movementVector * player.speed}
+
+        let afterCollisionVelocity =
             Collision.collision map.TileLayers.[2] map.Tilesets.[0] rbUpdated dt
-            |> List.sortBy(fun (_,_,c) -> c.distance)
+            |> List.sortBy(fun (_,c) -> c.distance)
             |> List.tryHead
             |> function
                 | None ->
-                    rbUpdated.velocity, rbUpdated.onGround, rbUpdated.onGroundLast
-                | Some (velocity, onGround, contact) ->
-                    velocity, onGround, rbUpdated.onGroundLast
+                    rbUpdated.velocity
+                | Some (velocity, contact) ->
+                    velocity
                     
         let newPosition =
             let maxClamp =
@@ -548,14 +532,13 @@ type Game1 () as this =
                 
             let pos = player.rigidBody.aabb.center + (afterCollisionVelocity * dt)
             Vector2.Clamp(pos, player.rigidBody.aabb.halfExtents, maxClamp)
-                
+            
         player <- { player with
                         rigidBody =
                             {player.rigidBody with
                                 velocity = afterCollisionVelocity
                                 aabb = {player.rigidBody.aabb with center = newPosition}
-                                onGround = onGround
-                                onGroundLast = onGroundLast}
+                            }
                         isAnimating = true
                         currentAnimationKey = animationKey
                         facingRight = facingRight
